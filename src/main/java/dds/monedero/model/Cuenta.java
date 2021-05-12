@@ -18,7 +18,7 @@ public class Cuenta {
   public Cuenta(double saldo) { this.saldo = saldo; }
 
   public void poner(double cuanto) {
-    if (cuanto <= 0) {
+    if (esNegativo(cuanto)) {
       throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
     }
 
@@ -30,10 +30,10 @@ public class Cuenta {
   }
 
   public void sacar(double cuanto) {
-    if (cuanto <= 0) {
+    if (esNegativo(cuanto)) {
       throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
     }
-    if (getSaldo() - cuanto < 0) {  //Podria ser una funcion, para mas claridad.
+    if (quedaSaldoNegativo(cuanto)) {
       throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");
     }
 
@@ -58,6 +58,9 @@ public class Cuenta {
         .mapToDouble(Movimiento::getMonto)
         .sum();
   }
+
+  public boolean quedaSaldoNegativo(double cantidad){return getSaldo() - cantidad < 0;}
+  public boolean esNegativo(double cantidad){return cantidad <= 0;}
 
   public List<Movimiento> getMovimientos() {
     return movimientos;
