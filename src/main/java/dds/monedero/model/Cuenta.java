@@ -11,17 +11,11 @@ import java.util.List;
 
 public class Cuenta {
 
-  private double saldo = 0; //No inicializar variables, sino en constructores
+  private double saldo;
   private List<Movimiento> movimientos = new ArrayList<>();
 
-  //Arreglar los Constructors. Unirlos
-  public Cuenta() {
-    saldo = 0;
-  }
-
-  public Cuenta(double montoInicial) {
-    saldo = montoInicial;
-  }
+  //Asumo que una cuenta que se crea, no tiene movimientos asociados
+  public Cuenta(double saldo) { this.saldo = saldo; }
 
   public void poner(double cuanto) {
     if (cuanto <= 0) {
