@@ -26,7 +26,7 @@ public class Cuenta {
       throw new MaximaCantidadDepositosException("Ya excedio los " + 3 + " depositos diarios");
     }
 
-    new Movimiento(LocalDate.now(), cuanto, true).agregateA(this); // ??
+    agregarMovimiento(new Movimiento(LocalDate.now(), cuanto, true));
   }
 
   public void sacar(double cuanto) {
@@ -44,12 +44,7 @@ public class Cuenta {
       throw new MaximoExtraccionDiarioException("No puede extraer mas de $ " + 1000
           + " diarios, límite: " + limite);
     }
-    new Movimiento(LocalDate.now(), cuanto, false).agregateA(this); // ??
-  }
-
-  public void agregarMovimiento(LocalDate fecha, double cuanto, boolean esDeposito) { //Pasarle el movimiento ya armado, y no sus variables
-    Movimiento movimiento = new Movimiento(fecha, cuanto, esDeposito);
-    movimientos.add(movimiento);
+    agregarMovimiento(new Movimiento(LocalDate.now(), cuanto, false));
   }
 
   public double getMontoExtraidoA(LocalDate fecha) {
@@ -59,18 +54,20 @@ public class Cuenta {
         .sum();
   }
 
+  public void agregarMovimiento(Movimiento movimiento) {
+    calcularValor(movimiento);  //Chequea a su vez si el movimiento va a ser valido
+    movimientos.add(movimiento);
+  }
+
+  private void calcularValor(Movimiento movimiento) {
+    movimiento.calcularValor(getSaldo());
+  }
+
   public boolean quedaSaldoNegativo(double cantidad){return getSaldo() - cantidad < 0;}
   public boolean esNegativo(double cantidad){return cantidad <= 0;}
 
-  public List<Movimiento> getMovimientos() {
-    return movimientos;
-  }
-  public void setMovimientos(List<Movimiento> movimientos) {this.movimientos = movimientos;} //No se que tan util es este setter
-  public double getSaldo() {
-    return saldo;
-  }
-  public void setSaldo(double saldo) {
-    this.saldo = saldo;
-  }
+  public List<Movimiento> getMovimientos() {return movimientos;}
+  public double getSaldo() {return saldo;}
+  public void setSaldo(double saldo) {this.saldo = saldo;}
 
 }

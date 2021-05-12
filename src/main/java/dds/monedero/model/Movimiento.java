@@ -1,5 +1,7 @@
 package dds.monedero.model;
 
+import dds.monedero.exceptions.SaldoMenorAMontoExtraidoException;
+
 import java.time.LocalDate;
 
 //Dividir a Movimiento en Extraccion y Deposito. Clase TipoMovimiento?
@@ -32,27 +34,19 @@ public class Movimiento {
     return !esDeposito;
   } // Red flag --> vuela
 
-  //Agregar directamente el Movimiento
-  public void agregateA(Cuenta cuenta) {
-    cuenta.setSaldo(calcularValor(cuenta));
-    cuenta.agregarMovimiento(fecha, monto, esDeposito);
-  }
-
   //Podria hacerse polimorifica si existe Extraccion y Deposito
-  public double calcularValor(Cuenta cuenta) {
+  public double calcularValor(double saldo) {
     if (esDeposito) {
-      return cuenta.getSaldo() + getMonto();
+      return saldo + getMonto();
     } else {
-      return cuenta.getSaldo() - getMonto();
+      //Fijarse bien si esta verificacion va acá
+      if(saldo < getMonto()){throw new SaldoMenorAMontoExtraidoException("El monto es mayor al saldo");}
+      return saldo - getMonto();
     }
   }
 
-  public double getMonto() {
-    return monto;
-  }
-  public LocalDate getFecha() {
-    return fecha;
-  }
+  public double getMonto() {return monto;}
+  public LocalDate getFecha() {return fecha;}
 }
 
 /* Notas
