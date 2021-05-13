@@ -1,55 +1,28 @@
 package dds.monedero.model;
 
-import dds.monedero.exceptions.SaldoMenorAMontoExtraidoException;
-
 import java.time.LocalDate;
 
-//Dividir a Movimiento en Extraccion y Deposito. Clase TipoMovimiento?
 public class Movimiento {
   private LocalDate fecha;
   //En ningún lenguaje de programación usen jamás doubles para modelar dinero en el mundo real
   //siempre usen numeros de precision arbitraria, como BigDecimal en Java y similares
   private double monto;
-  private boolean esDeposito; //Esto vuela. Reemplazarlo por TipoMovimiento (clase? Interface?)
+  private TipoMovimiento tipoMovimiento;
 
-  public Movimiento(LocalDate fecha, double monto, boolean esDeposito) {
+  public Movimiento(LocalDate fecha, double monto, TipoMovimiento tipoMovimiento) {
     this.fecha = fecha;
     this.monto = monto;
-    this.esDeposito = esDeposito;
+    this.tipoMovimiento = tipoMovimiento;
   }
 
-  public boolean fueDepositado(LocalDate fecha) {return isDeposito() && esDeLaFecha(fecha);} //Haciendo Extraccion y Deposito habria que ver de nuevo esta funcion
-
-  public boolean fueExtraido(LocalDate fecha) {return isExtraccion() && esDeLaFecha(fecha);} //Haciendo Extraccion y Deposito habria que ver de nuevo esta funcion
-
-  public boolean esDeLaFecha(LocalDate fecha) {
-    return this.fecha.equals(fecha);
+  public boolean fueRealizado(TipoMovimiento tipoMovimiento, LocalDate fecha){
+    return getTipoMovimiento().equals(tipoMovimiento) && esDeLaFecha(fecha);
   }
 
-  public boolean isDeposito() {
-    return esDeposito;
-  } // Red flag --> vuela
+  public boolean esDeLaFecha(LocalDate fecha) { return this.fecha.equals(fecha); }
 
-  public boolean isExtraccion() {
-    return !esDeposito;
-  } // Red flag --> vuela
-
-  //Podria hacerse polimorifica si existe Extraccion y Deposito
-  public double calcularValor(double saldo) {
-    if (esDeposito) {
-      return saldo + getMonto();
-    } else {
-      //Fijarse bien si esta verificacion va acá
-      if(saldo < getMonto()){throw new SaldoMenorAMontoExtraidoException("El monto es mayor al saldo");}
-      return saldo - getMonto();
-    }
-  }
+  public double calcularValor() { return tipoMovimiento.calcularValor(getMonto()); }
 
   public double getMonto() {return monto;}
-  public LocalDate getFecha() {return fecha;}
+  public TipoMovimiento getTipoMovimiento(){return tipoMovimiento;}
 }
-
-/* Notas
-- Cuenta ya conoce a Movimiento, sin embargo, Movimiento pasa a Cuenta por paramentro en algunos metodos
-
- */
