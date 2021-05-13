@@ -9,22 +9,24 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
+import java.util.stream.Collectors;
 
 public class Cuenta {
 
-  private double saldo;
+  private BigDecimal saldo;
   private List<Movimiento> movimientos = new ArrayList<>();
-  private double limiteExtraccionDiario;
+  private BigDecimal limiteExtraccionDiario;
   private int limiteCantidadDeDepositosDiarios;
 
   //Asumo que una cuenta que se crea, no tiene movimientos asociados
-  public Cuenta(double saldo, double limiteExtraccionDiario, int limiteCantidadDeDepositosDiarios) {
+  public Cuenta(BigDecimal saldo, BigDecimal limiteExtraccionDiario, int limiteCantidadDeDepositosDiarios) {
     this.saldo = saldo;
     this.limiteExtraccionDiario = limiteExtraccionDiario;
     this.limiteCantidadDeDepositosDiarios = limiteCantidadDeDepositosDiarios;
   }
 
-  public void poner(double cantidadDepositada) {
+  public void poner(BigDecimal cantidadDepositada) {
     if (esNegativo(cantidadDepositada)) { throw new MontoNegativoException(cantidadDepositada + ": el monto a ingresar debe ser un valor positivo"); }
 
     if (cantidadDeMovimientoParticularDelDia(TipoMovimiento.DEPOSITO, LocalDate.now()) >= getLimiteCantidadDeDepositosDiarios()) {
@@ -34,26 +36,26 @@ public class Cuenta {
     agregarMovimiento(new Movimiento(LocalDate.now(), cantidadDepositada, TipoMovimiento.DEPOSITO));
   }
 
-  public void sacar(double cantidadExtraida) {
+  public void sacar(BigDecimal cantidadExtraida) {
     if (esNegativo(cantidadExtraida)) {throw new MontoNegativoException(cantidadExtraida + ": el monto a ingresar debe ser un valor positivo");}
     if (quedaSaldoNegativo(cantidadExtraida)) {throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");}
 
-    if (cantidadExtraida > cantidadPosibleDeExtracción()) {
+    if (cantidadExtraida.max(cantidadPosibleDeExtracción()).equals(cantidadExtraida)) {
       throw new MaximoExtraccionDiarioException("No puede extraer mas de $" + getLimiteExtraccionDiario() + " diarios, límite: " + cantidadPosibleDeExtracción());
     }
 
     agregarMovimiento(new Movimiento(LocalDate.now(), cantidadExtraida, TipoMovimiento.EXTRACCION));
   }
 
-  public double cantidadPosibleDeExtracción(){
-    return getLimiteExtraccionDiario() - getMontoExtraidoA(LocalDate.now());
+  public BigDecimal cantidadPosibleDeExtracción(){
+    return getLimiteExtraccionDiario().subtract(getMontoExtraidoA(LocalDate.now()));
   }
 
-  public double getMontoExtraidoA(LocalDate fecha) {
+  public BigDecimal getMontoExtraidoA(LocalDate fecha) {
     return getMovimientos().stream()
-        .filter(movimiento -> movimiento.fueRealizado(TipoMovimiento.EXTRACCION, fecha)) //se puede aclarar usando Extraccion y Deposito. Podria hacer esa consulta el Movimiento o en algun TipoMovimiento?
-        .mapToDouble(Movimiento::getMonto)
-        .sum();
+        .filter(movimiento -> movimiento.fueRealizado(TipoMovimiento.EXTRACCION, fecha))
+        .map(Movimiento::getMonto)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   public int cantidadDeMovimientoParticularDelDia(TipoMovimiento tipoMovimiento, LocalDate fecha){
@@ -63,21 +65,24 @@ public class Cuenta {
   }
 
   public void agregarMovimiento(Movimiento movimiento) {
-    actualizarSaldo(movimiento.calcularValor()); //Se corrobra antes si se puede agregar el movimiento.
+    actualizarSaldo(movimiento.calcularValor());
     movimientos.add(movimiento);
   }
 
-
-  public void actualizarSaldo(double valorDeMovimiento){
-    setSaldo(getSaldo() + valorDeMovimiento);
+  public void actualizarSaldo(BigDecimal valorDeMovimiento){
+    setSaldo(getSaldo().add(valorDeMovimiento));
   }
 
-  public boolean quedaSaldoNegativo(double cantidadExtraida){return getSaldo() - cantidadExtraida < 0;}
-  public boolean esNegativo(double cantidad){return cantidad <= 0;}
+  public boolean quedaSaldoNegativo(BigDecimal cantidadExtraida){
+    return esNegativo(getSaldo().subtract(cantidadExtraida));
+  }
+  public boolean esNegativo(BigDecimal cantidad){
+    return cantidad.max(new BigDecimal(0)).equals(new BigDecimal(0));
+  }
 
   public List<Movimiento> getMovimientos() {return movimientos;}
-  public double getSaldo() {return saldo;}
-  public void setSaldo(double saldo) {this.saldo = saldo;}
-  public double getLimiteExtraccionDiario() {return limiteExtraccionDiario;}
+  public BigDecimal getSaldo() {return saldo;}
+  public void setSaldo(BigDecimal saldo) {this.saldo = saldo;}
+  public BigDecimal getLimiteExtraccionDiario() {return limiteExtraccionDiario;}
   public int getLimiteCantidadDeDepositosDiarios() {return limiteCantidadDeDepositosDiarios;}
 }

@@ -7,6 +7,7 @@ import dds.monedero.exceptions.SaldoMenorException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,73 +15,92 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MonederoTest {
   private Cuenta cuenta;
+  private BigDecimal saldo = new BigDecimal(0);
+  private BigDecimal limiteExtraccion = new BigDecimal(1000);
+  private int limiteCantidadDeDepositos = 3;
+
+  private BigDecimal depositoAceptable = new BigDecimal(1500);
+  private BigDecimal depositoAceptable2 = new BigDecimal(456);
+  private BigDecimal depositoAceptable3 = new BigDecimal(1900);
+  private BigDecimal depositoAceptable4 = new BigDecimal(245);
+
+  private BigDecimal extraccionAceptable = new BigDecimal(300);
+  private BigDecimal extraccionAceptable2 = new BigDecimal(100);
+
+  private BigDecimal saldoMuyChico = new BigDecimal(90);
+  private BigDecimal saldoMediano = new BigDecimal(5000);
+  private BigDecimal cantidadMuyGrandeExtraida = new BigDecimal(1001);
+
+  private BigDecimal cantidadNegativa = new BigDecimal(1500).negate();
+  private BigDecimal cantidadResultante = new BigDecimal(945);
 
   @BeforeEach
   void init() {
-    cuenta = new Cuenta(0, 1000, 3);
+    cuenta = new Cuenta(saldo, limiteExtraccion, limiteCantidadDeDepositos);
   }
 
   @Test
   void Poner() {
-    cuenta.poner(1500);
-    assertEquals(cuenta.getSaldo(), 1500);
+    cuenta.poner(depositoAceptable);
+    assertEquals(cuenta.getSaldo(), depositoAceptable);
   }
 
   @Test
   void PonerMontoNegativo() {
-    assertThrows(MontoNegativoException.class, () -> cuenta.poner(-1500));
+    assertThrows(MontoNegativoException.class, () -> cuenta.poner(cantidadNegativa));
   }
 
   @Test
   void TresDepositos() {
-    cuenta.poner(1500);
-    cuenta.poner(456);
-    cuenta.poner(1900);
+    cuenta.poner(depositoAceptable);
+    cuenta.poner(depositoAceptable2);
+    cuenta.poner(depositoAceptable3);
     assertEquals(cuenta.cantidadDeMovimientoParticularDelDia(TipoMovimiento.DEPOSITO, LocalDate.now()), 3);
   }
 
   @Test
   void MasDeTresDepositos() {
     assertThrows(MaximaCantidadDepositosException.class, () -> {
-          cuenta.poner(1500);
-          cuenta.poner(456);
-          cuenta.poner(1900);
-          cuenta.poner(245);
+          cuenta.poner(depositoAceptable);
+          cuenta.poner(depositoAceptable2);
+          cuenta.poner(depositoAceptable3);
+          cuenta.poner(depositoAceptable4);
     });
   }
 
   @Test
   void ExtraerMasQueElSaldo() {
     assertThrows(SaldoMenorException.class, () -> {
-          cuenta.setSaldo(90);
-          cuenta.sacar(1001);
+          cuenta.setSaldo(saldoMuyChico);
+          cuenta.sacar(cantidadMuyGrandeExtraida);
     });
   }
 
   @Test
   public void ExtraerMasDe1000() {
     assertThrows(MaximoExtraccionDiarioException.class, () -> {
-      cuenta.setSaldo(5000);
-      cuenta.sacar(1001);
+      cuenta.setSaldo(saldoMediano);
+      cuenta.sacar(cantidadMuyGrandeExtraida);
     });
   }
 
   @Test
   public void ExtraerMontoNegativo() {
-    assertThrows(MontoNegativoException.class, () -> cuenta.sacar(-500));
+    assertThrows(MontoNegativoException.class, () -> cuenta.sacar(cantidadNegativa));
   }
 
   @Test
   public void DiferenciarDepositoDeExtraccion(){
-    cuenta.poner(20000);
-    cuenta.sacar(300);
-    cuenta.sacar(200);
-    cuenta.poner(30000);
-    cuenta.sacar(100);
-    cuenta.sacar(300);
+    cuenta.poner(depositoAceptable);
+    cuenta.sacar(extraccionAceptable);
+    cuenta.sacar(extraccionAceptable2);
+    cuenta.poner(depositoAceptable4);
+    cuenta.sacar(extraccionAceptable2);
+    cuenta.sacar(extraccionAceptable);
 
     assertEquals(cuenta.cantidadDeMovimientoParticularDelDia(TipoMovimiento.DEPOSITO,LocalDate.now()), 2);
     assertEquals(cuenta.cantidadDeMovimientoParticularDelDia(TipoMovimiento.EXTRACCION, LocalDate.now()), 4);
-    assertEquals(cuenta.getSaldo(), 49100);
+    assertEquals(cuenta.getMontoExtraidoA(LocalDate.now()), new BigDecimal(800));
+    assertEquals(cuenta.getSaldo(), cantidadResultante);
   }
 }

@@ -1,17 +1,18 @@
 package dds.monedero.model;
+import java.math.BigDecimal;
 
 public enum TipoMovimiento {
 
   DEPOSITO{
-    public double calcularValor(double monto){
+    public BigDecimal calcularValor(BigDecimal monto){
       return monto;
     }
   },
   EXTRACCION(){
-    public double calcularValor(double monto){
-      return -monto;
+    public BigDecimal calcularValor(BigDecimal monto){
+      return monto.negate();
     }
   };
 
-  public abstract double calcularValor(double monto);
+  public abstract BigDecimal calcularValor(BigDecimal monto);
 }
