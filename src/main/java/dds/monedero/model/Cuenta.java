@@ -13,39 +13,39 @@ public class Cuenta {
 
   private double saldo;
   private List<Movimiento> movimientos = new ArrayList<>();
+  private double limiteExtraccionDiario;
+  private int limiteDepositoDiario;
 
   //Asumo que una cuenta que se crea, no tiene movimientos asociados
-  public Cuenta(double saldo) { this.saldo = saldo; }
-
-  public void poner(double cuanto) {
-    if (esNegativo(cuanto)) {
-      throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
-    }
-
-    if (getMovimientos().stream().filter(movimiento -> movimiento.isDeposito()).count() >= 3) {//se puede aclarar usando Extraccion y Deposito. Podria hacer esa consulta el Movimiento o en algun TipoMovimiento?
-      throw new MaximaCantidadDepositosException("Ya excedio los " + 3 + " depositos diarios");
-    }
-
-    agregarMovimiento(new Movimiento(LocalDate.now(), cuanto, true));
+  public Cuenta(double saldo, double limiteExtraccionDiario, int limiteDepositoDiario) {
+    this.saldo = saldo;
+    this.limiteExtraccionDiario = limiteExtraccionDiario;
+    this.limiteDepositoDiario = limiteDepositoDiario;
   }
 
-  public void sacar(double cuanto) {
-    if (esNegativo(cuanto)) {
-      throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
-    }
-    if (quedaSaldoNegativo(cuanto)) {
-      throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");
+  public void poner(double cantidadDepositada) {
+    if (esNegativo(cantidadDepositada)) { throw new MontoNegativoException(cantidadDepositada + ": el monto a ingresar debe ser un valor positivo"); }
+
+    //se puede aclarar usando Extraccion y Deposito. Podria hacer esa consulta el Movimiento o en algun TipoMovimiento?
+    if (getMovimientos().stream().filter(movimiento -> movimiento.isDeposito()).count() >= getLimiteDepositoDiario()) {
+      throw new MaximaCantidadDepositosException("Ya excedio los " + getLimiteDepositoDiario() + " depositos diarios");
     }
 
-    //aca abajo hay algo sumamente raro
-    double montoExtraidoHoy = getMontoExtraidoA(LocalDate.now());
-    double limite = 1000 - montoExtraidoHoy;
-    if (cuanto > limite) {
-      throw new MaximoExtraccionDiarioException("No puede extraer mas de $ " + 1000
-          + " diarios, límite: " + limite);
-    }
-    agregarMovimiento(new Movimiento(LocalDate.now(), cuanto, false));
+    agregarMovimiento(new Movimiento(LocalDate.now(), cantidadDepositada, true));
   }
+
+  public void sacar(double cantidadExtraida) {
+    if (esNegativo(cantidadExtraida)) {throw new MontoNegativoException(cantidadExtraida + ": el monto a ingresar debe ser un valor positivo");}
+    if (quedaSaldoNegativo(cantidadExtraida)) {throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");}
+
+    if (cantidadExtraida > cantidadPosibleDeExtracción()) {
+      throw new MaximoExtraccionDiarioException("No puede extraer mas de $" + getLimiteExtraccionDiario() + " diarios, límite: " + cantidadPosibleDeExtracción());
+    }
+
+    agregarMovimiento(new Movimiento(LocalDate.now(), cantidadExtraida, false));
+  }
+
+  public double cantidadPosibleDeExtracción(){ return getLimiteExtraccionDiario() - getMontoExtraidoA(LocalDate.now());}
 
   public double getMontoExtraidoA(LocalDate fecha) {
     return getMovimientos().stream()
@@ -55,12 +55,12 @@ public class Cuenta {
   }
 
   public void agregarMovimiento(Movimiento movimiento) {
-    calcularValor(movimiento);  //Chequea a su vez si el movimiento va a ser valido
+    setSaldo(calcularValor(movimiento));
     movimientos.add(movimiento);
   }
 
-  private void calcularValor(Movimiento movimiento) {
-    movimiento.calcularValor(getSaldo());
+  private double calcularValor(Movimiento movimiento) {
+    return movimiento.calcularValor(getSaldo());
   }
 
   public boolean quedaSaldoNegativo(double cantidad){return getSaldo() - cantidad < 0;}
@@ -69,5 +69,6 @@ public class Cuenta {
   public List<Movimiento> getMovimientos() {return movimientos;}
   public double getSaldo() {return saldo;}
   public void setSaldo(double saldo) {this.saldo = saldo;}
-
+  public double getLimiteExtraccionDiario() {return limiteExtraccionDiario;}
+  public int getLimiteDepositoDiario() {return limiteDepositoDiario;}
 }
