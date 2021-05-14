@@ -1,0 +1,19 @@
+Ya finalizado el codigo, pude notar mas codeSmells de los que había notado previamente:
+
+- Constructores que podian resumirse en uno solo.
+- Long Parameter List: agregarMovimiento(), le pasaba los parametros de un movimiento en vez de el Movimiento que queria agregar. 
+- Misplaced methods: Movimiento pasaba como parametro a Cuenta en algunos metodos, y estos metodos hacian cosas que eran responsabilidad de Cuenta.
+  Ej: agregateA(cuenta), que el que Movimiento pasaba por parametro una cuenta para agregarse a si mismo a esa cuenta.
+  
+- Missing polymorphism: Habia funciones, isDeposito() y isExtraccion(), que devolvian si la clase era de un tipo o no.
+- Duplicated Code: calcularValor(), podia hacerse polimorficamente, ya que el calculo dependia del tipo de Movimiento.
+- Duplicated Code: la finalidad de esExtraido() y esDepositado() era la misma a grandes razgos, pero dependía del tipo de Movimiento.
+- Duplicated Code: hay una clara abstracción de Deposito y Extraccion que no está en el codigo.
+- Missing polymorphism: usar un flag para determinar si una clase es de un tipo o de otro
+
+codeSmells que me di cuenta despues de empezar a modificar las cosas:
+- usar valores hardcodeados (1000 como cantidad maxima extraible y 3 como cantidad maxima de depositos). De aca pude deducir:
+    - una cuenta tiene una cantidad maxima de depositos
+    - una cuenta tiene una cantidad maxima de dinero a extraer
+    - esto hace que existan multiples tipos de cuentas con sus caracteristicas
+- Una vez que hice la abstraccion de Deposito y Extraccion, habia mucho comportamiento que se podia hacer polimorifcamente usando TipoMovimiento.
